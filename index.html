@@ -160,14 +160,17 @@
         // REEMPLAZA LAS COMILLAS "" DE ABAJO CON TUS LLAVES DE FIREBASE PARA GITHUB
         // =========================================================================
         const firebaseConfig = {
-            apiKey: "",
-            authDomain: "",
-            projectId: "",
-            storageBucket: "",
-            messagingSenderId: "",
-            appId: ""
+            apiKey: "AIzaSyDPjKj8vHJ7vFbTz1iya6W_wtUOK5VurqI",
+            authDomain: "status-equipo-36c5d.firebaseapp.com",
+            projectId: "status-equipo-36c5d",
+            storageBucket: "status-equipo-36c5d.firebasestorage.app",
+            messagingSenderId: "959046348184",
+            appId: "1:959046348184:web:be6d929b62e3ba31698fed",
+            measurementId: "G-QK9PFXV2B5"
         };
-
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         // Detección automática para el entorno de pruebas
         let config = null;
         try {
@@ -388,4 +391,5 @@
         init();
     </script>
 </body>
+
 </html>

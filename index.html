@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA DE STATUS - CONTROL DE PROCESOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .status-transition { transition: all 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-24">
+
+    <div id="app">
+        <!-- Navegación y Búsqueda -->
+        <header class="bg-white/90 backdrop-blur-md border-b sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg shadow-blue-200">
+                        <i data-lucide="layout-dashboard" size="26"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-black text-slate-900 tracking-tighter uppercase">Status de Pendientes</h1>
+                        <div id="statusIndicator" class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                            <p id="statusText" class="text-[10px] text-slate-500 uppercase tracking-widest font-black">Conectando...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="relative flex-1 md:w-80">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size="16"></i>
+                        <input 
+                            type="text" 
+                            id="searchBar"
+                            placeholder="BUSCAR TAREA O ENCARGADO..."
+                            class="w-full pl-11 pr-4 py-3 bg-slate-100 border-none rounded-2xl text-xs font-black focus:ring-2 focus:ring-blue-500 transition-all uppercase"
+                        >
+                    </div>
+                    <button 
+                        id="btnToggleForm"
+                        class="p-3 bg-slate-900 text-white rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                    >
+                        <i data-lucide="plus" id="addIcon" size="24"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 mt-8">
+            <!-- Panel de Contadores -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Tareas</p>
+                    <p id="countTotal" class="text-2xl font-black text-slate-800">0</p>
+                </div>
+                <div class="bg-yellow-50 p-6 rounded-[2rem] border border-yellow-100 shadow-sm">
+                    <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Pendientes</p>
+                    <p id="countPending" class="text-2xl font-black text-yellow-700">0</p>
+                </div>
+                <div class="bg-blue-50 p-6 rounded-[2rem] border border-blue-100 shadow-sm">
+                    <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">En Proceso</p>
+                    <p id="countProgress" class="text-2xl font-black text-blue-700">0</p>
+                </div>
+                <div class="bg-green-50 p-6 rounded-[2rem] border border-green-100 shadow-sm">
+                    <p class="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Completados</p>
+                    <p id="countDone" class="text-2xl font-black text-green-700">0</p>
+                </div>
+            </div>
+
+            <!-- Formulario de Entrada (Mayúsculas Automáticas) -->
+            <div id="formContainer" class="hidden bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 mb-10 animate-in slide-in-from-top-6 duration-500">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-blue-600">Agregar Nueva Tarea</h2>
+                    <button id="btnCloseForm" class="text-slate-300 hover:text-slate-600"><i data-lucide="x"></i></button>
+                </div>
+                <form id="taskForm" class="grid md:grid-cols-12 gap-6">
+                    <div class="md:col-span-4 space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Responsable</label>
+                        <input type="text" id="inputResp" placeholder="EJ: BUK, HONDA..." class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black uppercase outline-none focus:border-blue-500" required>
+                    </div>
+                    <div class="md:col-span-8 space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción del Proceso</label>
+                        <div class="flex gap-3">
+                            <input type="text" id="inputProc" placeholder="INGRESE LA TAREA..." class="flex-1 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black uppercase outline-none focus:border-blue-500" required>
+                            <button type="submit" class="bg-blue-600 text-white px-8 rounded-2xl font-black text-xs uppercase hover:bg-blue-700 shadow-lg shadow-blue-200 active:scale-95 transition-all">Guardar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Filtros por Responsable -->
+            <div id="filterBar" class="flex items-center gap-3 mb-8 overflow-x-auto pb-4 scrollbar-hide">
+                <!-- Generado por JS -->
+            </div>
+
+            <!-- Tabla de Datos -->
+            <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">
+                                <th class="px-8 py-6">Responsable</th>
+                                <th class="px-8 py-6">Proceso / Tarea</th>
+                                <th class="px-8 py-6 text-center">Estado</th>
+                                <th class="px-8 py-6"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody" class="divide-y divide-slate-50">
+                            <!-- Los procesos se cargan aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal Anexo 1 -->
+        <div id="modalAnexo" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+            <div class="bg-white rounded-[2rem] w-full max-w-5xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+                <div class="bg-slate-900 p-6 text-white flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="file-spreadsheet" size="24" class="text-blue-400"></i>
+                        <h3 class="font-black tracking-tight uppercase text-sm">Anexo 1: Validación de Fechas</h3>
+                    </div>
+                    <button id="closeModal" class="hover:bg-white/10 p-2 rounded-full"><i data-lucide="x"></i></button>
+                </div>
+                <div class="p-8 overflow-x-auto max-h-[60vh]">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="border-b-2 text-slate-400 font-black uppercase tracking-widest">
+                                <th class="px-4 py-4 text-left">Empresa</th>
+                                <th class="px-4 py-4 text-left">DNI / Número</th>
+                                <th class="px-4 py-4 text-left">Nombre Completo</th>
+                                <th class="px-4 py-4 text-left text-blue-600 bg-blue-50/50">Reporte 31/10</th>
+                                <th class="px-4 py-4 text-left text-green-600 bg-green-50/50">Fecha BUK</th>
+                            </tr>
+                        </thead>
+                        <tbody id="anexoTableBody" class="divide-y divide-slate-50">
+                            <!-- Datos del anexo 1 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase y Lógica -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // =========================================================================
+        // REEMPLAZA LAS COMILLAS "" DE ABAJO CON TUS LLAVES DE FIREBASE PARA GITHUB
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "",
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+
+        // Detección automática para el entorno de pruebas
+        let config = null;
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                config = JSON.parse(__firebase_config);
+            } else if (firebaseConfig.apiKey !== "") {
+                config = firebaseConfig;
+            }
+        } catch (e) {}
+
+        // Datos del Anexo 1 del Excel
+        const ANEXO_1_DATA = [
+            { emp: "HDP", num: "71395089", nom: "ACOSTA DLOAYZA NICOLAS", rep: "2021-12-17", buk: "2021-12-15" },
+            { emp: "HSP", num: "5365524", nom: "DIAZ FLORES ENRIQUE", rep: "2011-10-01", buk: "2002-12-17" },
+            { emp: "HSP", num: "43014238", nom: "INFANZON GARCIA HERNAN LUIS", rep: "2010-05-01", buk: "2009-12-14" },
+            { emp: "HSP", num: "7751221", nom: "RENGIFO QUISPE CARLOS MARCOS", rep: "2010-05-01", buk: "1991-11-18" },
+            { emp: "HSP", num: "44849303", nom: "TUESTA TORRES WILSON JUNIOR", rep: "2014-01-01", buk: "2009-03-02" }
+        ];
+
+        // Procesos Iniciales del Excel
+        const INITIAL_SEED = [
+            { encargado: 'BUK', proceso: 'INDEMNIZACIÓN DE VACACIONES. BK ESPEJO' },
+            { encargado: 'BUK', proceso: 'BLOQUEO DE VACACIONES.' },
+            { encargado: 'BUK', proceso: 'PROBAR TXT PAGO.' },
+            { encargado: 'BUK', proceso: 'ENSEÑAR COMO SE REGISTRA LOS PRESTAMOS' },
+            { encargado: 'HONDA', proceso: 'HISTORICO DE FALTAS (PARA PROCESO DE LIQUIDACIONES)' },
+            { encargado: 'HONDA', proceso: 'ACTUALIZACIÓN DE LOS DATOS AFP (PLATAFORMA AFP NET)' },
+            { encargado: 'HONDA', proceso: 'SOLICITAR LOS DOCUMENTOS DE RETENCION JUDICIAL' },
+            { encargado: 'ABRAHAM', proceso: 'EL CLIENTE NOS CONFIRMÓ CAMBIAR DE FECHAS DE INGRESO. (VALIDAR FECHA DE INGRESO) ANEXO 1' },
+            { encargado: 'ABRAHAM', proceso: 'INGRESAR NOVEDADES DICIEMBRE (ADEMÁS VALIDAR LOS % DE APORTE)' },
+            { encargado: 'KATJUSKA', proceso: 'VALIDAR GRATIFICACIONES DICIEMBRE (CÁLCULO, PRESTAMOS, DESCUENTO, ETC)' },
+            { encargado: 'KATJUSKA', proceso: 'RECORDATORIO INDICANDO QUE ESTÁ PENDIENTE LA ACTUALIZACIÓN DE LOS DATOS AFP' }
+        ];
+
+        let db, auth, tareasCol;
+        let allTasks = [];
+        let filterActive = 'TODOS';
+        let isOnline = false;
+        let appId = typeof __app_id !== 'undefined' ? __app_id : 'status-app-v1';
+
+        async function init() {
+            if (config) {
+                try {
+                    const app = initializeApp(config);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            isOnline = true;
+                            document.getElementById('statusText').innerText = "CONECTADO EN TIEMPO REAL";
+                            document.getElementById('statusIndicator').querySelector('span').classList.replace('bg-yellow-500', 'bg-green-500');
+                            startSync();
+                        }
+                    });
+                } catch (e) {
+                    console.error("Fallo de conexión:", e);
+                    loadLocal();
+                }
+            } else {
+                loadLocal();
+            }
+        }
+
+        function loadLocal() {
+            isOnline = false;
+            document.getElementById('statusText').innerText = "MODO LOCAL (DATOS NO SE GUARDAN)";
+            allTasks = INITIAL_SEED.map((t, i) => ({ id: 'local-'+i, ...t, status: 'PENDIENTE', createdAt: new Date().toISOString() }));
+            render();
+        }
+
+        function startSync() {
+            tareasCol = collection(db, 'artifacts', appId, 'public', 'data', 'tareas');
+            onSnapshot(tareasCol, (snapshot) => {
+                if (snapshot.empty) {
+                    INITIAL_SEED.forEach(t => addDoc(tareasCol, { ...t, status: 'PENDIENTE', createdAt: new Date().toISOString() }));
+                } else {
+                    allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    allTasks.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    render();
+                }
+            });
+        }
+
+        function render() {
+            const body = document.getElementById('taskTableBody');
+            const search = document.getElementById('searchBar').value.toUpperCase();
+            
+            const filtered = allTasks.filter(t => {
+                const matchSearch = t.proceso.includes(search) || t.encargado.includes(search);
+                const matchFilter = filterActive === 'TODOS' || t.encargado === filterActive;
+                return matchSearch && matchFilter;
+            });
+
+            body.innerHTML = filtered.map(t => `
+                <tr class="hover:bg-slate-50/50 group transition-all">
+                    <td class="px-8 py-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                <i data-lucide="user" size="14"></i>
+                            </div>
+                            <span class="font-black text-slate-800 text-xs tracking-tight">${t.encargado}</span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-6">
+                        <div class="space-y-2">
+                            <p class="text-xs font-bold text-slate-600 uppercase leading-relaxed max-w-2xl">${t.proceso}</p>
+                            ${t.proceso.includes('ANEXO 1') ? `<button onclick="window.openAnexo()" class="flex items-center gap-2 text-[9px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 hover:bg-blue-600 hover:text-white transition-all w-fit uppercase"><i data-lucide="file-text" size="12"></i> Ver Anexo 1</button>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-8 py-6">
+                        <div class="flex justify-center relative group/menu">
+                            <button class="px-4 py-2 rounded-2xl text-[10px] font-black border-2 shadow-sm ${getStatusStyle(t.status)}">
+                                ${t.status}
+                            </button>
+                            <div class="absolute left-1/2 -translate-x-1/2 mt-2 hidden group-hover/menu:block z-30 bg-white border rounded-2xl shadow-2xl p-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-100">
+                                ${['PENDIENTE', 'EN PROCESO', 'COMPLETADO'].map(st => `
+                                    <button onclick="window.updateStatus('${t.id}', '${st}')" class="w-full text-left px-4 py-2 text-[10px] hover:bg-slate-50 rounded-xl font-black uppercase text-slate-500 hover:text-blue-600 transition-colors">${st}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                        <button onclick="window.deleteTask('${t.id}')" class="p-2 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50"><i data-lucide="trash-2" size="18"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            renderFilters();
+            updateStats();
+            lucide.createIcons();
+        }
+
+        function renderFilters() {
+            const bar = document.getElementById('filterBar');
+            const resps = ['TODOS', ...new Set(allTasks.map(t => t.encargado))].sort();
+            bar.innerHTML = `<div class="flex items-center gap-2 text-slate-400 mr-2 border-r pr-4 border-slate-200 shrink-0"><i data-lucide="filter" size="14"></i><span class="text-[9px] font-black uppercase">Filtrar:</span></div>`;
+            resps.forEach(r => {
+                const btn = document.createElement('button');
+                btn.className = `px-5 py-2.5 rounded-2xl text-[10px] font-black tracking-widest border-2 transition-all shrink-0 ${filterActive === r ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400'}`;
+                btn.innerText = r;
+                btn.onclick = () => { filterActive = r; render(); };
+                bar.appendChild(btn);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('countTotal').innerText = allTasks.length;
+            document.getElementById('countPending').innerText = allTasks.filter(t => t.status === 'PENDIENTE').length;
+            document.getElementById('countProgress').innerText = allTasks.filter(t => t.status === 'EN PROCESO').length;
+            document.getElementById('countDone').innerText = allTasks.filter(t => t.status === 'COMPLETADO').length;
+        }
+
+        function getStatusStyle(s) {
+            if (s === 'PENDIENTE') return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+            if (s === 'EN PROCESO') return 'bg-blue-50 text-blue-700 border-blue-200';
+            return 'bg-green-50 text-green-700 border-green-200';
+        }
+
+        window.updateStatus = async (id, status) => {
+            if (isOnline) {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tareas', id), { status });
+            } else {
+                allTasks = allTasks.map(t => t.id == id ? {...t, status} : t);
+                render();
+            }
+        };
+
+        window.deleteTask = async (id) => {
+            if (!confirm("¿ELIMINAR TAREA?")) return;
+            if (isOnline) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tareas', id));
+            } else {
+                allTasks = allTasks.filter(t => t.id != id);
+                render();
+            }
+        };
+
+        window.openAnexo = () => {
+            const body = document.getElementById('anexoTableBody');
+            body.innerHTML = ANEXO_1_DATA.map(r => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-4 font-black text-slate-800">${r.emp}</td>
+                    <td class="px-4 py-4 text-slate-500 font-bold">${r.num}</td>
+                    <td class="px-4 py-4 font-black uppercase text-slate-700">${r.nom}</td>
+                    <td class="px-4 py-4 text-blue-700 bg-blue-50/20 font-black">${r.rep}</td>
+                    <td class="px-4 py-4 text-green-700 bg-green-50/20 font-black">${r.buk}</td>
+                </tr>
+            `).join('');
+            document.getElementById('modalAnexo').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        document.getElementById('taskForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const resp = document.getElementById('inputResp').value.trim().toUpperCase();
+            const proc = document.getElementById('inputProc').value.trim().toUpperCase();
+            if (isOnline) {
+                await addDoc(tareasCol, { encargado: resp, proceso: proc, status: 'PENDIENTE', createdAt: new Date().toISOString() });
+            } else {
+                allTasks.unshift({ id: 'local-'+Date.now(), encargado: resp, proceso: proc, status: 'PENDIENTE', createdAt: new Date().toISOString() });
+                render();
+            }
+            document.getElementById('inputProc').value = '';
+        };
+
+        document.getElementById('btnToggleForm').onclick = () => document.getElementById('formContainer').classList.toggle('hidden');
+        document.getElementById('btnCloseForm').onclick = () => document.getElementById('formContainer').classList.add('hidden');
+        document.getElementById('closeModal').onclick = () => document.getElementById('modalAnexo').classList.add('hidden');
+        document.getElementById('searchBar').oninput = render;
+
+        init();
+    </script>
+</body>
+</html>
